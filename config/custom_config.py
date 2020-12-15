@@ -31,12 +31,12 @@ SVGO_PATH: str = r'/usr/bin/svgo'
 SVGO_CONFIG_PATH: str = r'./config/svgo.yml'
 
 USERNAME: str = 'grigala'
-IGNORE_LIST: list = ['Plain text',
+IGNORE_LIST: list = ['plain text',
                      'nerdtree',
-                     'Markdown',
-                     'Properties',
-                     'XML',
-                     'JSON',
+                     'markdown',
+                     'properties',
+                     'xml',
+                     'json',
                      'vim-plug',
                      'scminput',
                      'log']
