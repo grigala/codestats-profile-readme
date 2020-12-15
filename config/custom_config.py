@@ -38,4 +38,5 @@ IGNORE_LIST: list = ['Plain text',
                      'XML',
                      'JSON',
                      'vim-plug',
-                     'scminput']
+                     'scminput',
+                     'log']
