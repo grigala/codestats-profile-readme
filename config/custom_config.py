@@ -39,4 +39,5 @@ IGNORE_LIST: list = ['plain text',
                      'json',
                      'vim-plug',
                      'scminput',
-                     'log']
+                     'log',
+                     'git config']
