@@ -25,7 +25,7 @@ REDIS_URL: str = ''
 SVG_OPTIMIZE_ENABLE: bool = False
 
 # SVGO_PATH: Specifies the path to SVGO.
-SVGO_PATH: str = r'/usr/bin/svgo'
+SVGO_PATH: str = r'/usr/local/bin/svgo'
 
 # SVGO_CONFIG_PATH: Specifies the path to the config file of SVGO.
 SVGO_CONFIG_PATH: str = r'./config/svgo.yml'

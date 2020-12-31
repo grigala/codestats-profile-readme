@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 import bisect
+import calendar
+import datetime
 import math
+import os
+import time
 from typing import List
 
 import arrow
@@ -16,6 +20,7 @@ from app.utils.svgo import try_optimize_svg
 from config import custom_config
 
 history_graph = Blueprint('history_graph', __name__, url_prefix='/history-graph')
+timestamp = calendar.timegm(time.gmtime())
 
 
 def calculate_best_range(y_max):
@@ -26,6 +31,11 @@ def calculate_best_range(y_max):
     tick_delta = new_fraction * 10 ** (exponent - 1)
     return math.ceil(y_max / tick_delta) * tick_delta
 
+
+def append_timestamp(filename):
+    human_readable = datetime.datetime.fromtimestamp(timestamp).isoformat()
+    filename_with_timestamp = filename + "_" + str(human_readable) + ".svg"
+    return filename_with_timestamp
 
 def get_graph(day_language_xp_list: List[DailyLanguageXp], config: GraphConfig):
     today = arrow.utcnow().to(config.timezone)
@@ -44,7 +54,7 @@ def get_graph(day_language_xp_list: List[DailyLanguageXp], config: GraphConfig):
         xp_per_day[pos] += obj.xp
 
     # sort by the sum of xp
-    language_xp_list = list(filter(lambda s: s[0].lower() not in custom_config.IGNORE_LIST, language_xp_dict.items()))
+    language_xp_list = list(filter(lambda s: s[0] not in custom_config.IGNORE_LIST, language_xp_dict.items()))
     language_xp_list.sort(key=lambda k_v: sum(k_v[1]), reverse=True)
 
     # not using day_language_xp_list because it may contains data not in date range
@@ -182,7 +192,10 @@ def get_graph(day_language_xp_list: List[DailyLanguageXp], config: GraphConfig):
             width=2
         )
     )
-
+    # Keeping always max 1 file in the directory
+    for f in os.listdir("history"):
+        os.remove(os.path.join("history/", f))
+    fig.write_image(append_timestamp("history/result"))
     return fig
 
 
@@ -191,29 +204,45 @@ def get_history_graph(username: str):
     args = request.args.to_dict(flat=True)
     current_app.logger.info('args: %s', args)
 
-    try:
-        config: GraphConfig = GraphConfigSchema(unknown=EXCLUDE).load(args)
-    except ValidationError as err:
-        raise err
+    for f in os.listdir("history"):
+        a = f.split("_")[1].split(".")[0]
+        d = datetime.datetime.fromisoformat(a)
+        now = datetime.datetime.now()
+        if (now - d).days < 1:
+            current_app.logger.info('Serving existing svg file...')
 
-    # restricting usage to my user only
-    if username != custom_config.USERNAME:
-        user = User(custom_config.USERNAME)
-    else:
-        user = User(username)
-    user.set_real_username()
+            file = open(os.path.join("history/", f), "rb")
+            svg = file.read()
+            file.close()
+            return Response(svg, mimetype='image/svg+xml', headers={
+                'Cache-Control': 'max-age=0'
+            })
+        else:
+            current_app.logger.info('File is >= 1 day(s) old, generating the new data...')
 
-    today = arrow.utcnow().to(config.timezone)
-    # get history for 30 days directly to cache data
-    first_day = today.shift(days=-30 + 1)
-    day_language_xp_list = user.get_day_language_xp_list(first_day)
+            try:
+                config: GraphConfig = GraphConfigSchema(unknown=EXCLUDE).load(args)
+            except ValidationError as err:
+                raise err
 
-    graph = get_graph(day_language_xp_list, config)
+            # restricting usage to my user only
+            if username != custom_config.USERNAME:
+                user = User(custom_config.USERNAME)
+            else:
+                user = User(username)
+            user.set_real_username()
 
-    svg = graph.to_image('svg', engine='kaleido', width=config.width, height=config.height, scale=1)
-    if current_app.config['SVG_OPTIMIZE_ENABLE']:
-        svg = try_optimize_svg(svg.decode('utf-8'))
+            today = arrow.utcnow().to(config.timezone)
+            # get history for 30 days directly to cache data
+            first_day = today.shift(days=-30 + 1)
+            day_language_xp_list = user.get_day_language_xp_list(first_day)
 
-    return Response(svg, mimetype='image/svg+xml', headers={
-        'Cache-Control': 'max-age=0'
-    })
+            graph = get_graph(day_language_xp_list, config)
+
+            svg = graph.to_image('svg', engine='kaleido', width=config.width, height=config.height, scale=1)
+            if current_app.config['SVG_OPTIMIZE_ENABLE']:
+                svg = try_optimize_svg(svg.decode('utf-8'))
+
+            return Response(svg, mimetype='image/svg+xml', headers={
+                'Cache-Control': 'max-age=0'
+            })
