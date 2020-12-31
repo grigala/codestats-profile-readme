@@ -205,6 +205,7 @@ def get_history_graph(username: str):
     current_app.logger.info('args: %s', args)
 
     for f in os.listdir("history"):
+        current_app.logger.info('SVG file: %s', f)
         a = f.split("_")[1].split(".")[0]
         d = datetime.datetime.fromisoformat(a)
         now = datetime.datetime.now()
