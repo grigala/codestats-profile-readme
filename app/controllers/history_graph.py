@@ -54,7 +54,7 @@ def get_graph(day_language_xp_list: List[DailyLanguageXp], config: GraphConfig):
         xp_per_day[pos] += obj.xp
 
     # sort by the sum of xp
-    language_xp_list = list(filter(lambda s: s[0] not in custom_config.IGNORE_LIST, language_xp_dict.items()))
+    language_xp_list = list(filter(lambda s: s[0].lower() not in custom_config.IGNORE_LIST, language_xp_dict.items()))
     language_xp_list.sort(key=lambda k_v: sum(k_v[1]), reverse=True)
 
     # not using day_language_xp_list because it may contains data not in date range
@@ -210,6 +210,7 @@ def get_history_graph(username: str):
         d = datetime.datetime.fromisoformat(a)
         now = datetime.datetime.now()
         if (now - d).days < 1:
+            current_app.logger.info('Diff: %s days', abs((now - d).days))
             current_app.logger.info('Serving existing svg file...')
 
             file = open(os.path.join("history/", f), "rb")
