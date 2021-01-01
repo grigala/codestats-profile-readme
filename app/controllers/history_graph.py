@@ -209,8 +209,9 @@ def get_history_graph(username: str):
         a = f.split("_")[1].split(".")[0]
         d = datetime.datetime.fromisoformat(a)
         now = datetime.datetime.now()
-        if (now - d).days < 1:
-            current_app.logger.info('Diff: %s days', abs((now - d).days))
+        current_app.logger.info('Diff: %s days', abs((now - d).days))
+        
+        if abs((now - d).days) < 1:
             current_app.logger.info('Serving existing svg file...')
 
             file = open(os.path.join("history/", f), "rb")
