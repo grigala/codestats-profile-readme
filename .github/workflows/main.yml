@@ -24,3 +24,6 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: grigala/codestats-profile-readme@master
+      
+      - name: Run
+        run: curl http://0.0.0.0:8000/history-graph/grigala?max_langauges=15
